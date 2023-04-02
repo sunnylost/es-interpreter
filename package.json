@@ -12,9 +12,9 @@
     "devDependencies": {
         "acorn": "^8.8.2",
         "acorn-walk": "^8.2.0",
-        "eslint": "^8.36.0",
+        "eslint": "^8.37.0",
         "prettier": "^2.8.7",
-        "typescript": "^5.0.2",
+        "typescript": "^5.0.3",
         "vite": "^4.2.1"
     }
 }
