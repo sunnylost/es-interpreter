@@ -1,4 +1,4 @@
-import { interpret } from './'
+import { interpret } from '../src'
 
 const result = interpret(`
 let a = 1;

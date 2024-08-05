@@ -1,3 +1,6 @@
+/**
+ * https://tc39.es/ecma262/#sec-ecmascript-language-scripts-and-modules
+ */
 import { InitializeHostDefinedRealm, RealmRecord } from './realm'
 import { ModuleRecord } from './module'
 import { ExecutionContext, GlobalEnvironmentRecord } from './env'
@@ -45,18 +48,13 @@ export function ScriptEvaluation(scriptRecord: ScriptRecord) {
 
     surroundingAgent.executionContextStack.pop()
     surroundingAgent.runningExecutionContext =
-        surroundingAgent.executionContextStack[
-            surroundingAgent.executionContextStack.length - 1
-        ]
+        surroundingAgent.executionContextStack[surroundingAgent.executionContextStack.length - 1]
 
     return result
 }
 
 // TODO: https://tc39.es/ecma262/#sec-globaldeclarationinstantiation
-function GlobalDeclarationInstantiation(
-    script: ParseNode,
-    env: GlobalEnvironmentRecord
-) {
+function GlobalDeclarationInstantiation(script: ParseNode, env: GlobalEnvironmentRecord) {
     const lexNames = script.LexicallyDeclaredNames
     const varNames = script.VarDeclaredNames
 

@@ -13,5 +13,5 @@ export const surroundingAgent: Agent = {
     executionContextList: [],
     executionContextStack: [],
     runningExecutionContext: null,
-    executingThread: null,
+    executingThread: null
 }
