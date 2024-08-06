@@ -18,7 +18,7 @@ export function ToPrimitive(input: ECMAScriptLanguageValue, preferredType?: stri
     // TODO: $is
     if ($is(input, 'object')) {
         const exoticToPrim = GetMethod(input, '@@toPrimitive')
-        let hint
+        let hint: string
 
         if (exoticToPrim) {
             if (!preferredType) {
@@ -114,7 +114,7 @@ export function ToObject(argument: ECMAScriptLanguageValue) {
         return createThrowCompletion(argument)
     }
 
-    return createNormalCompletion()
+    return createNormalCompletion<ECMAScriptLanguageValue>(argument)
 }
 
 export function ToBoolean(argument: ECMAScriptLanguageValue) {

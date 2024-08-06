@@ -19,8 +19,7 @@ import { ModuleRecord } from '../module'
 // https://tc39.es/ecma262/#sec-object-type
 // https://tc39.es/ecma262/#sec-ordinary-and-exotic-objects-behaviours
 export class ECMAScriptObject implements ECMAScriptLanguageValue {
-    $type: 'object'
-    $name: '%Object%'
+    $type = 'object'
     // An integer index is a String-valued property key that is a canonical numeric string and whose numeric value is either +0𝔽 or a positive integral Number ≤ 𝔽(253 - 1). An array index is an integer index whose numeric value i is in the range +0𝔽 ≤ i < 𝔽(232 - 1).
     property: {
         [x in PropertyKey]: PropertyDescriptor
@@ -66,7 +65,7 @@ export class ECMAScriptObject implements ECMAScriptLanguageValue {
     __Get__(P: PropertyKey, Receiver: ECMAScriptLanguageValue) {
         return OrdinaryGet(this, P, Receiver)
     }
-    __Set__(P: PropertyKey, V: ECMAScriptLanguageValue, Receiver: ECMAScriptLanguageValue) {
+    __Set__(P: PropertyKey, V: ECMAScriptLanguageValue, Receiver?: ECMAScriptLanguageValue) {
         const desc = this.__GetOwnProperty__(P)
 
         if (
@@ -211,7 +210,7 @@ function OrdinaryHasProperty(O: ECMAScriptObject, P: PropertyKey) {
     const parent = O.__GetPrototypeOf__()
 
     if (parent) {
-        return parent.__Value__.__HasProperty__(P)
+        return parent.__HasProperty__(P)
     }
 
     return false
@@ -263,3 +262,6 @@ export function OrdinaryObjectCreate(
     O.__Prototype__ = proto // use ordinary function?
     return O
 }
+
+// TODO
+export const ObjectPrototype = new ECMAScriptObject()

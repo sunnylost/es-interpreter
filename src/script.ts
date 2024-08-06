@@ -8,6 +8,8 @@ import { surroundingAgent } from './agent'
 import { ParseNode, unused } from './types'
 import { ParseText } from './parse'
 import { VariableDeclarationStr } from './astNodeTypes'
+import { InstantiateFunctionObject } from './objects/function'
+import { evaluate } from './evaluate'
 
 // Initialize
 InitializeHostDefinedRealm()
@@ -22,6 +24,7 @@ export class ScriptRecord {
     __HostDefined__: null
 }
 
+// https://tc39.es/ecma262/#sec-parse-script
 export function ParseScript(sourceText: string, realm: RealmRecord) {
     let script = ParseText(sourceText, 'script')
     const scriptRecord = new ScriptRecord()
@@ -45,7 +48,7 @@ export function ScriptEvaluation(scriptRecord: ScriptRecord) {
     surroundingAgent.runningExecutionContext = scriptContext
     const script = scriptRecord.__ECMAScriptCode__
     const result = GlobalDeclarationInstantiation(script, globalEnv)
-
+    evaluate(script.node)
     surroundingAgent.executionContextStack.pop()
     surroundingAgent.runningExecutionContext =
         surroundingAgent.executionContextStack[surroundingAgent.executionContextStack.length - 1]
@@ -77,7 +80,7 @@ function GlobalDeclarationInstantiation(script: ParseNode, env: GlobalEnvironmen
         }
     }
 
-    for (let name of varNames) {
+    for (const name of varNames) {
         if (env.HasLexicalDeclaration(name)) {
             // TODO: syntaxError
             return
@@ -87,10 +90,10 @@ function GlobalDeclarationInstantiation(script: ParseNode, env: GlobalEnvironmen
     const varDeclarations = script.VarScopedDeclarations
     const functionsToInitialize = []
     const declaredFunctionNames = []
-    debugger
+
     // reverse order
-    for (let d of [...varDeclarations].reverse()) {
-        // d is not either a VariableDeclaration, a ForBinding, or a BindingIdentifier
+    for (const d of [...varDeclarations].reverse()) {
+        // TODO: d is not either a VariableDeclaration, a ForBinding, or a BindingIdentifier
         if (d.type !== VariableDeclarationStr) {
             const fn = d.BoundNames[0]
 
@@ -99,6 +102,7 @@ function GlobalDeclarationInstantiation(script: ParseNode, env: GlobalEnvironmen
 
                 if (!fnDefinable) {
                     // throw
+                    return
                 }
 
                 declaredFunctionNames.push(fn)
@@ -131,8 +135,8 @@ function GlobalDeclarationInstantiation(script: ParseNode, env: GlobalEnvironmen
     const lexDeclarations = script.LexicallyScopedDeclarations
     const privateEnv = null
 
-    for (let d of lexDeclarations) {
-        for (let dn of d.BoundNames) {
+    for (const d of lexDeclarations) {
+        for (const dn of d.BoundNames) {
             if (d.IsConstantDeclaration) {
                 env.CreateImmutableBinding(dn, true)
             } else {
@@ -141,9 +145,9 @@ function GlobalDeclarationInstantiation(script: ParseNode, env: GlobalEnvironmen
         }
     }
 
-    for (let f of functionsToInitialize) {
+    for (const f of functionsToInitialize) {
         const fn = f.BoundNames[0]
-        const fo = InstantiateFunctionObject(env, privateEnv)
+        const fo = InstantiateFunctionObject(f, env, privateEnv)
         env.CreateGlobalFunctionBinding(fn, fo, false)
     }
 

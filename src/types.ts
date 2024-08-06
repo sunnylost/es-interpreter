@@ -1,4 +1,5 @@
 // https://tc39.es/ecma262/#sec-ecmascript-data-types-and-values
+import { Program } from 'acorn'
 import { EnvironmentRecord } from './env'
 import { ECMAScriptLanguageValue } from './global'
 import { $is } from './util'
@@ -6,13 +7,14 @@ import { ToObject } from './abstractOperations'
 import { ECMAScriptFunction, OrdinaryObjectCreate } from './objects/object'
 import { VariableDeclaration } from './astNodeTypes'
 
-enum CompletionRecordType {
+export enum CompletionRecordType {
     normal,
     break,
     continue,
     return,
     throw
 }
+
 export class CompletionRecord<T = any> {
     $type = 'ReferenceRecord'
     __Type__: CompletionRecordType = null
@@ -44,7 +46,8 @@ export type ThisModeType = typeof lexical | typeof strict | typeof global
 export type ConstructorKindType = typeof base | typeof derived
 
 export type ParseNode = {
-    type: string
+    type?: string // TODO
+    node: Program
     LexicallyDeclaredNames: string[]
     VarDeclaredNames: string[]
     VarScopedDeclarations: VariableDeclaration[] // TODO: more
@@ -52,7 +55,7 @@ export type ParseNode = {
 } // TODO
 
 export class ReferenceRecord {
-    $type: 'ReferenceRecord'
+    $type = 'ReferenceRecord'
     __Base__: ECMAScriptLanguageValue | EnvironmentRecord | typeof unresolvable
     __ReferencedName__: string | symbol // private Name
     __Strict__: boolean
@@ -88,6 +91,15 @@ export function IsSuperReference(V: ReferenceRecord) {
     return false
 }
 
+// TODO: 6.2.5.4
+export function IsPrivateReference(V: ReferenceRecord) {
+    return false //V.__ReferencedName__
+}
+
+export function GetThisValue(V: ReferenceRecord) {
+    return IsSuperReference(V) ? V.__ThisValue__ : V.__Base__
+}
+
 // TODO
 export function GetValue(V: ReferenceRecord | ECMAScriptLanguageValue) {
     if (!$is<ReferenceRecord>(V, 'ReferenceRecord')) {
@@ -95,20 +107,21 @@ export function GetValue(V: ReferenceRecord | ECMAScriptLanguageValue) {
     }
 
     if (IsUnresolvableReference(V)) {
-        // throwException(ReferenceError)
+        // TODO: throwException(ReferenceError)
+        return
     }
 
     if (IsPropertyReference(V)) {
-        const baseObj = ToObject(V.__Base__)
+        const baseObj = ToObject(V.__Base__ as ECMAScriptLanguageValue)
 
         if (IsPrivateReference(V)) {
             return PrivateGet(baseObj, V.__ReferencedName__)
         }
 
-        return baseObj.__Get__(V.__ReferencedName__, GetThisValue(V))
+        return baseObj.__Value__.__Get__(V.__ReferencedName__, GetThisValue(V))
     } else {
         const base = V.__Base__
-        return base.GetBindingValue(V.__ReferencedName__, V.__Strict__)
+        return base.GetBindingValue(V.__ReferencedName__, true)
     }
 }
 

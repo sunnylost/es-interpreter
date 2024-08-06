@@ -39,7 +39,9 @@ export class EnvironmentRecord {
     // CreateImmutableBinding(N: string, S: boolean) {}
     // InitializeBinding(N: string, V: ECMAScriptLanguageValue) {}
     // SetMutableBinding() {}
-    // GetBindingValue() {}
+    GetBindingValue() {
+        console.log('todo')
+    }
     // DeleteBinding() {}
     // HasThisBinding() {}
     // HasSuperBinding() {}
@@ -440,7 +442,7 @@ export class GlobalEnvironmentRecord extends EnvironmentRecord {
         const globalObject = ObjRec.__BindingObject__
         const existingProp = globalObject.__GetOwnProperty__(N)
 
-        let desc
+        let desc: DataPropertyDescriptor
 
         if (!existingProp || existingProp.__Configurable__) {
             desc = new DataPropertyDescriptor(V)
@@ -481,7 +483,7 @@ export function GetIdentifierReference(env: EnvironmentRecord, name: string, str
         ref.__ReferencedName__ = name
         ref.__Strict__ = strict
         ref.__ThisValue__ = empty
-        return createNormalCompletion(ref)
+        return ref
     } else {
         const outer = env.__OuterEnv__
         return GetIdentifierReference(outer, name, strict)
@@ -549,13 +551,12 @@ function GetActiveScriptOrModule() {
 }
 
 // 9.4.2 https://tc39.es/ecma262/#sec-resolvebinding
-function ResolveBinding(name: string, env?: EnvironmentRecord) {
+export function ResolveBinding(name: string, env?: EnvironmentRecord) {
     if (!env) {
         env = surroundingAgent.runningExecutionContext.LexicalEnvironment
     }
-    // TODO: strict mode
-    const strict = true
-    GetIdentifierReference(env, name, strict)
+
+    return GetIdentifierReference(env, name, true)
 }
 
 // 9.4.3 https://tc39.es/ecma262/#sec-getthisenvironment

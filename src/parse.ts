@@ -36,11 +36,12 @@ function IsVarDeclaration(node: Node): node is VariableDeclaration {
     return isVariableDeclaration(node) && node.kind === 'var'
 }
 
-export function ParseText(sourceText, goalSymbol: 'script' | 'module'): ParseNode {
+export function ParseText(sourceText: string, goalSymbol: 'script' | 'module'): ParseNode {
     const ast = acorn.parse(sourceText, {
         ecmaVersion: 'latest'
     })
     let retValue = {
+        node: ast,
         // TODO: only find let/const
         LexicallyDeclaredNames: [],
         LexicallyScopedDeclarations: [],
@@ -52,13 +53,13 @@ export function ParseText(sourceText, goalSymbol: 'script' | 'module'): ParseNod
     walk.simple(ast, {
         Program(node) {
             node?.body.filter(IsLexicallyDeclaration).forEach((_node) => {
-                const node = parseLexicallyDeclaration(_node)
+                const node = parseLexicallyDeclaration(_node as LexicallyDeclaration)
                 retValue.LexicallyDeclaredNames.push(...node.BoundNames)
                 retValue.LexicallyScopedDeclarations.push(node)
             })
 
-            node?.body.filter(IsVarDeclaration).forEach((_node: VariableDeclaration) => {
-                const node = parseVariableDeclaration(_node)
+            node?.body.filter(IsVarDeclaration).forEach((_node) => {
+                const node = parseVariableDeclaration(_node as VariableDeclaration)
                 retValue.VarDeclaredNames.push(...node.BoundNames)
                 retValue.VarScopedDeclarations.push(node)
             })

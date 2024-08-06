@@ -1,5 +1,6 @@
 import { Node } from 'acorn'
 
+export const ProgramStr = 'Program'
 export const BlockStatementStr = 'BlockStatement'
 export const VariableDeclarationStr = 'VariableDeclaration'
 export const FunctionDeclarationStr = 'FunctionDeclaration'
@@ -7,10 +8,11 @@ export const ExpressionStatementStr = 'ExpressionStatement'
 
 export const BinaryExpressionStr = 'BinaryExpression'
 export const CallExpressionStr = 'CallExpression'
+export const MemberExpressionStr = 'MemberExpression'
 
 export const LiteralStr = 'Literal'
-
 export const IdentifierStr = 'Identifier'
+
 interface Identifier extends Node {
     type: typeof IdentifierStr
     name: string // TODO

@@ -1,4 +1,4 @@
-import { Node } from 'acorn'
+import { Identifier, MemberExpression, Node, Program } from 'acorn'
 import {
     BinaryExpression,
     BinaryExpressionStr,
@@ -9,19 +9,27 @@ import {
     ExpressionStatementStr,
     FunctionDeclaration,
     FunctionDeclarationStr,
+    IdentifierStr,
     Literal,
     LiteralStr,
+    MemberExpressionStr,
+    ProgramStr,
     VariableDeclaration,
     VariableDeclarationStr
 } from './astNodeTypes'
 import { ToPrimitive, ToString } from './abstractOperations'
-import { createNormalCompletion, GetValue } from './types'
+import { GetValue } from './types'
 import { surroundingAgent } from './agent'
 import { $is } from './util'
+import { ResolveBinding } from './env'
 
 export function evaluate(node: Node) {
     console.log(node)
     switch (node.type) {
+        case ProgramStr:
+            ;(node as Program).body.forEach((n) => evaluate(n))
+            break
+
         case VariableDeclarationStr:
             evaluateVariableDeclaration(node as VariableDeclaration)
             break
@@ -29,11 +37,17 @@ export function evaluate(node: Node) {
         case ExpressionStatementStr:
             return evaluateExpression((node as ExpressionStatement).expression)
 
+        case IdentifierStr:
+            return evaluateIdentifier(node as Identifier)
+
         case LiteralStr:
             return evaluateLiteral(node as Literal)
 
         case FunctionDeclarationStr:
-            return evaluateFunctionDeclaration(node)
+            return evaluateFunctionDeclaration(node as FunctionDeclaration)
+
+        case MemberExpressionStr:
+            return evaluateMemberExpression(node as MemberExpression)
     }
 }
 
@@ -106,7 +120,18 @@ function evaluateFunctionDeclaration(node: FunctionDeclaration) {
 }
 
 function evaluateCallExpression(expr: CallExpression) {
-    console.log(expr)
+    const memberExpr = expr.callee
+    const args = expr.arguments
+    const ref = evaluate(memberExpr)
+    const func = GetValue(ref)
+    // eval
+    const thisCall = expr
+    const tailCall = IsInTailPosition(thisCall)
+    return EvaluateCall(func, ref, args, tailCall)
+}
+
+function evaluateIdentifier(id: Identifier) {
+    return ResolveBinding(id.name)
 }
 
 function evaluateLiteral(literal: Literal) {
@@ -114,4 +139,12 @@ function evaluateLiteral(literal: Literal) {
         $type: typeof literal.value,
         PrimitiveValue: literal.value // TODO
     }
+}
+
+function evaluateMemberExpression(member: MemberExpression) {
+    const { property, object } = member
+    const baseReference = evaluate(object)
+    const baseValue = GetValue(baseReference)
+
+    return EvaluatePropertyAccessWithExpressionKey(baseValue, property, true)
 }

@@ -2,6 +2,9 @@
  * https://tc39.es/ecma262/#sec-well-known-intrinsic-objects
  * TODO
  */
+import { FunctionPrototype, ThrowTypeError } from '../objects/function'
+import { ObjectPrototype } from '../objects/object'
+
 export const IntrinsicObjects = {
     '%AggregateError%': 'AggregateError',
     '%Array%': 'Array',
@@ -24,6 +27,7 @@ export const IntrinsicObjects = {
     '%Float32Array%': 'Float32Array',
     '%Float64Array%': 'Float64Array',
     '%Function%': 'Function',
+    '%Function.prototype%': FunctionPrototype,
     '%Int8Array%': 'Int8Array',
     '%Int16Array%': 'Int16Array',
     '%Int32Array%': 'Int32Array',
@@ -34,6 +38,7 @@ export const IntrinsicObjects = {
     '%Math%': 'Math',
     '%Number%': 'Number',
     '%Object%': 'Object',
+    '%Object.prototype%': ObjectPrototype,
     '%parseFloat%': 'parseFloat',
     '%parseInt%': 'parseInt',
     '%Promise%': 'Promise',
@@ -55,5 +60,11 @@ export const IntrinsicObjects = {
     '%URIError%': 'URIError',
     '%WeakMap%': 'WeakMap',
     '%WeakRef%': 'WeakRef',
-    '%WeakSet%': 'WeakSet'
+    '%WeakSet%': 'WeakSet',
+    '%ThrowTypeError%': ThrowTypeError,
+    console: {
+        log(...args: any[]) {
+            console.log.apply(console, args)
+        }
+    }
 }

@@ -3,7 +3,7 @@ import { ExecutionContext, GlobalEnvironmentRecord, NewGlobalEnvironment } from 
 import { surroundingAgent } from './agent'
 import { ECMAScriptFunction, ECMAScriptObject, OrdinaryObjectCreate } from './objects/object'
 import { IntrinsicObjects } from './intrinsic'
-import { AccessorPropertyDescriptor, PropertyDescriptor, unused } from './types'
+import { CompletionRecord, CompletionRecordType, DataPropertyDescriptor, unused } from './types'
 import { DefinePropertyOrThrow } from './abstractOperations'
 
 export class RealmRecord {
@@ -27,7 +27,7 @@ export function CreateRealm() {
 }
 
 function CreateIntrinsics(realmRec: RealmRecord) {
-    realmRec.__Intrinsics__ = IntrinsicObjects // new Record
+    realmRec.__Intrinsics__ = IntrinsicObjects
     AddRestrictedFunctionProperties(realmRec.__Intrinsics__['%Function.prototype%'], realmRec)
 }
 
@@ -50,10 +50,20 @@ function SetRealmGlobalObject(
     globalObj: ECMAScriptObject | undefined,
     thisValue: ECMAScriptObject | undefined
 ) {
-    let intrinsics
-
     if (globalObj === undefined) {
-        intrinsics = realmRec.__Intrinsics__
+        const __Intrinsics__ = realmRec.__Intrinsics__
+        const intrinsics = new ECMAScriptObject()
+
+        Object.keys(__Intrinsics__).forEach((key) => {
+            // TODO
+            const desc = new DataPropertyDescriptor()
+            desc.__Writable__ = false
+            desc.__Configurable__ = false
+            desc.__Enumerable__ = true
+            desc.__Value__ = __Intrinsics__[key]
+            intrinsics.property[key] = desc
+        })
+
         globalObj = OrdinaryObjectCreate(intrinsics)
     }
 
@@ -61,12 +71,13 @@ function SetRealmGlobalObject(
         thisValue = globalObj
     }
     realmRec.__GlobalObject__ = globalObj
-    const newGlobalEnv = NewGlobalEnvironment(globalObj, thisValue)
-    realmRec.__GlobalEnv__ = newGlobalEnv
+    realmRec.__GlobalEnv__ = NewGlobalEnvironment(globalObj, thisValue)
 }
 
 function SetDefaultGlobalBindings(realmRec: RealmRecord) {
     // TODO
+    const global = realmRec.__GlobalObject__
+    console.log('global', global)
 }
 
 function AddRestrictedFunctionProperties(F: ECMAScriptFunction, realm: RealmRecord) {
