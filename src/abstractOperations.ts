@@ -1,15 +1,15 @@
 // https://tc39.es/ecma262/#sec-abstract-operations
 
-import { ECMAScriptLanguageValue, PropertyKey } from './global'
+import type { ECMAScriptLanguageValue, PropertyKey } from './global'
 import { $is } from './util'
-import { ECMAScriptFunction, ECMAScriptObject, ECMAScriptString } from './objects/object'
-import {
+import type { ECMAScriptFunction, ECMAScriptObject, ECMAScriptString } from './objects'
+import type {
     createThrowCompletion,
     createNormalCompletion,
-    unused,
     PropertyDescriptor,
     DataPropertyDescriptor
 } from './types'
+import { unused } from './types'
 
 // 7.1 Type Conversion
 

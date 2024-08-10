@@ -1,6 +1,6 @@
 // https://tc39.es/ecma262/#sec-agents
 
-import { ExecutionContext } from './env'
+import type { ExecutionContext } from './env'
 
 export interface Agent {
     executionContextList: ExecutionContext[]

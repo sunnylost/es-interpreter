@@ -1,27 +1,34 @@
-import { Identifier, MemberExpression, Node, Program } from 'acorn'
+import type { Identifier, MemberExpression, Node, Program } from 'acorn'
 import {
-    BinaryExpression,
+    type BinaryExpression,
     BinaryExpressionStr,
-    CallExpression,
+    type CallExpression,
     CallExpressionStr,
-    Expression,
-    ExpressionStatement,
+    type ExpressionStatement,
     ExpressionStatementStr,
-    FunctionDeclaration,
+    type FunctionDeclaration,
     FunctionDeclarationStr,
     IdentifierStr,
-    Literal,
+    type Literal,
     LiteralStr,
     MemberExpressionStr,
     ProgramStr,
-    VariableDeclaration,
+    type VariableDeclaration,
     VariableDeclarationStr
 } from './astNodeTypes'
-import { ToPrimitive, ToString } from './abstractOperations'
-import { GetValue } from './types'
-import { surroundingAgent } from './agent'
-import { $is } from './util'
-import { ResolveBinding } from './env'
+import { Call, IsCallable, ToPrimitive, ToString } from './abstractOperations'
+import type {
+    GetThisValue,
+    GetValue,
+    IsPropertyReference,
+    ParseNode,
+    ReferenceRecord
+} from './types'
+import { empty } from './types'
+import { $is, isReferenceRecord } from './util'
+import { type DeclarativeEnvironmentRecord, ResolveBinding } from './env'
+import type { ECMAScriptLanguageValue } from './global'
+import type { ECMAScriptFunction } from './objects'
 
 export function evaluate(node: Node) {
     console.log(node)
@@ -35,7 +42,7 @@ export function evaluate(node: Node) {
             break
 
         case ExpressionStatementStr:
-            return evaluateExpression((node as ExpressionStatement).expression)
+            return evaluate((node as ExpressionStatement).expression)
 
         case IdentifierStr:
             return evaluateIdentifier(node as Identifier)
@@ -48,6 +55,12 @@ export function evaluate(node: Node) {
 
         case MemberExpressionStr:
             return evaluateMemberExpression(node as MemberExpression)
+
+        case BinaryExpressionStr:
+            return evaluateBinaryExpression(node as BinaryExpression)
+
+        case CallExpressionStr:
+            return evaluateCallExpression(node as CallExpression)
     }
 }
 
@@ -57,18 +70,6 @@ function evaluateVariableDeclaration(node: VariableDeclaration) {
     node.declarations.forEach((item) => {
         console.log(item)
     })
-}
-
-function evaluateExpression(expr: Expression) {
-    console.log('expression', expr, surroundingAgent)
-
-    switch (expr.type) {
-        case BinaryExpressionStr:
-            return evaluateBinaryExpression(expr as BinaryExpression)
-
-        case CallExpressionStr:
-            return evaluateCallExpression(expr as CallExpression)
-    }
 }
 
 // https://tc39.es/ecma262/#sec-evaluatestringornumericbinaryexpression
@@ -119,15 +120,63 @@ function evaluateFunctionDeclaration(node: FunctionDeclaration) {
     return F
 }
 
+// https://tc39.es/ecma262/#sec-function-calls-runtime-semantics-evaluation
 function evaluateCallExpression(expr: CallExpression) {
     const memberExpr = expr.callee
     const args = expr.arguments
     const ref = evaluate(memberExpr)
     const func = GetValue(ref)
     // eval
-    const thisCall = expr
-    const tailCall = IsInTailPosition(thisCall)
+    const tailCall = IsInTailPosition(memberExpr)
     return EvaluateCall(func, ref, args, tailCall)
+}
+
+// TODO
+function IsInTailPosition(expr: CallExpression) {
+    return false
+}
+
+function EvaluateCall(
+    func: ECMAScriptLanguageValue,
+    ref: ECMAScriptLanguageValue | ReferenceRecord,
+    args: Node[],
+    tailPosition: boolean
+) {
+    let thisValue: any
+
+    if (isReferenceRecord(ref)) {
+        if (IsPropertyReference(ref)) {
+            thisValue = GetThisValue(ref)
+        } else {
+            const refEnv = ref.__Base__
+            thisValue = (refEnv as DeclarativeEnvironmentRecord).WithBaseObject()
+        }
+    } else {
+        thisValue = undefined
+    }
+    const argList = ArgumentListEvaluation(args)
+
+    if (!$is(func, 'object') || !IsCallable(func)) {
+        // throw error
+        console.log('type error')
+        return
+    }
+
+    return Call(func, thisValue, argList)
+}
+
+function ArgumentListEvaluation(args: Node[]) {
+    const list = []
+
+    if (args.length === 0) {
+        return list
+    }
+
+    args.forEach((arg) => {
+        list.push(evaluate(arg))
+    })
+
+    return list
 }
 
 function evaluateIdentifier(id: Identifier) {
@@ -146,5 +195,54 @@ function evaluateMemberExpression(member: MemberExpression) {
     const baseReference = evaluate(object)
     const baseValue = GetValue(baseReference)
 
-    return EvaluatePropertyAccessWithExpressionKey(baseValue, property, true)
+    return property.type === IdentifierStr
+        ? EvaluatePropertyAccessWithIdentifierKey(baseValue, property, true)
+        : EvaluatePropertyAccessWithExpressionKey(baseValue, property, true)
+}
+
+/**
+ * MemberExpression . IdentifierName
+ */
+function EvaluatePropertyAccessWithIdentifierKey(
+    baseValue: ECMAScriptLanguageValue,
+    identifierName: Identifier,
+    strict: boolean
+) {
+    const propertyNameString = identifierName.name
+    const record = new ReferenceRecord()
+
+    record.__Base__ = baseValue
+    record.__ReferencedName__ = propertyNameString
+    record.__Strict__ = strict
+    record.__ThisValue__ = empty
+
+    return record
+}
+
+/**
+ * MemberExpression [ Expression ]
+ */
+function EvaluatePropertyAccessWithExpressionKey(
+    baseValue: ECMAScriptLanguageValue,
+    expression: Node,
+    strict: boolean
+) {
+    const propertyNameReference = evaluate(expression)
+    const propertyNameValue = GetValue(propertyNameReference)
+    const record = new ReferenceRecord()
+
+    record.__Base__ = baseValue
+    record.__ReferencedName__ = propertyNameValue
+    record.__Strict__ = strict
+    record.__ThisValue__ = empty
+
+    return record
+}
+
+export function EvaluateBody(
+    functionBody: ParseNode,
+    F: ECMAScriptFunction,
+    argumentsList: ECMAScriptLanguageValue[]
+) {
+    console.log(functionBody)
 }

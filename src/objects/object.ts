@@ -1,16 +1,14 @@
 import { Call, IsExtensible, MakeBasicObject, SameValue } from '../abstractOperations'
 import {
-    AccessorPropertyDescriptor,
-    ConstructorKindType,
     createNormalCompletion,
-    DataPropertyDescriptor,
     IsAccessorDescriptor,
     IsDataDescriptor,
-    ParseNode,
-    PropertyDescriptor,
-    ThisModeType
+    IsGenericDescriptor,
+    type AccessorPropertyDescriptor,
+    type DataPropertyDescriptor,
+    type PropertyDescriptor
 } from '../types'
-import { ECMAScriptLanguageValue } from '../global'
+import type { ECMAScriptLanguageValue } from '../global'
 import { EnvironmentRecord } from '../env'
 import { RealmRecord } from '../realm'
 import { ScriptRecord } from '../script'
@@ -69,16 +67,16 @@ export class ECMAScriptObject implements ECMAScriptLanguageValue {
         const desc = this.__GetOwnProperty__(P)
 
         if (
-            !(desc as DataPropertyDescriptor).__Configurable__ &&
-            !(desc as DataPropertyDescriptor).__Writable__ &&
-            !SameValue((desc as DataPropertyDescriptor).__Value__, V)
+            !(desc as DataPropertyDescriptor)?.__Configurable__ &&
+            !(desc as DataPropertyDescriptor)?.__Writable__ &&
+            !SameValue((desc as DataPropertyDescriptor)?.__Value__, V)
         ) {
             return false
         }
 
         if (
-            !(desc as AccessorPropertyDescriptor).__Configurable__ &&
-            !(desc as AccessorPropertyDescriptor).__Set__
+            !(desc as AccessorPropertyDescriptor)?.__Configurable__ &&
+            !(desc as AccessorPropertyDescriptor)?.__Set__
         ) {
             return false
         }
@@ -89,26 +87,6 @@ export class ECMAScriptObject implements ECMAScriptLanguageValue {
             OrdinaryOwnPropertyKeys(this)
         )
     }
-}
-
-export class ECMAScriptFunction extends ECMAScriptObject {
-    __Environment__: EnvironmentRecord
-    __PrivateEnvironment__: PrivateEnvironmentRecord | null
-    __FormalParameters__: ParseNode
-    __ECMAScriptCode__: ParseNode
-    __ConstructorKind__: ConstructorKindType
-    __Realm__: RealmRecord
-    __ScriptOrModule__: ScriptRecord | ModuleRecord
-    __ThisMode__: ThisModeType
-    __Strict__: boolean
-    __HomeObject__: ECMAScriptObject
-    __SourceText__: string
-    __Fields__: any // TODO
-    __PrivateMethods__: any // TODO
-    __ClassFieldInitializerName__: any // TODO
-    __IsClassConstructor__: boolean
-    __Call__() {}
-    __Construct__() {}
 }
 
 export class ECMAScriptString extends ECMAScriptObject {
@@ -191,14 +169,141 @@ function OrdinaryDefineOwnProperty(O: ECMAScriptObject, P: PropertyKey, Desc: Pr
     return ValidateAndApplyPropertyDescriptor(O, P, extensible, Desc, current)
 }
 
-// TODO
+// https://tc39.es/ecma262/#sec-validateandapplypropertydescriptor
 function ValidateAndApplyPropertyDescriptor(
     O: ECMAScriptObject,
     P: PropertyKey,
     extensible: boolean,
     Desc: PropertyDescriptor,
     current?: PropertyDescriptor
-) {}
+) {
+    if (!current) {
+        if (!extensible) {
+            return false
+        }
+        if (!O) {
+            return true
+        }
+
+        if (IsAccessorDescriptor(Desc)) {
+            const newDesc = new AccessorPropertyDescriptor()
+            if (Desc) {
+                newDesc.__Get__ = Desc.__Get__
+                newDesc.__Set__ = Desc.__Set__
+                newDesc.__Enumerable__ = Desc.__Enumerable__
+                newDesc.__Configurable__ = Desc.__Configurable__
+            }
+            O.property[P] = newDesc
+        } else {
+            const newDesc = new DataPropertyDescriptor()
+            if (Desc) {
+                newDesc.__Value__ = (Desc as DataPropertyDescriptor).__Value__
+                newDesc.__Enumerable__ = Desc.__Enumerable__
+                newDesc.__Writable__ = (Desc as DataPropertyDescriptor).__Writable__
+                newDesc.__Configurable__ = Desc.__Configurable__
+            }
+            O.property[P] = newDesc
+        }
+        return true
+    } else {
+        if (!Desc) {
+            return true
+        }
+
+        if (!current.__Configurable__) {
+            if (Desc?.__Configurable__) {
+                return false
+            }
+
+            if (Desc?.__Enumerable__ !== current.__Enumerable__) {
+                return false
+            }
+
+            if (
+                !IsGenericDescriptor(Desc) &&
+                IsAccessorDescriptor(Desc) !== IsAccessorDescriptor(current)
+            ) {
+                return false
+            }
+
+            if (IsAccessorDescriptor(current)) {
+                if (
+                    (Desc as AccessorPropertyDescriptor)?.__Get__ &&
+                    !SameValue((Desc as AccessorPropertyDescriptor).__Get__, current.__Get__)
+                ) {
+                    return false
+                }
+                if (
+                    (Desc as AccessorPropertyDescriptor)?.__Set__ &&
+                    !SameValue((Desc as AccessorPropertyDescriptor).__Set__, current.__Set__)
+                ) {
+                    return false
+                }
+            } else if (!(current as DataPropertyDescriptor).__Writable__) {
+                if ((Desc as DataPropertyDescriptor).__Writable__) {
+                    return false
+                }
+
+                if (
+                    !SameValue(
+                        (Desc as DataPropertyDescriptor).__Value__,
+                        (current as DataPropertyDescriptor).__Value__
+                    )
+                ) {
+                    return false
+                }
+            }
+        }
+    }
+
+    if (O) {
+        if (IsDataDescriptor(current) && IsAccessorDescriptor(Desc)) {
+            const configurable =
+                '__Configurable__' in Desc ? Desc.__Configurable__ : current.__Configurable__
+            const enumerable =
+                '__Enumerable__' in Desc ? Desc.__Enumerable__ : current.__Enumerable__
+            const newDesc = new AccessorPropertyDescriptor()
+
+            if ('__Get__' in Desc) {
+                newDesc.__Get__ = Desc.__Get__
+            }
+
+            if ('__Set__' in Desc) {
+                newDesc.__Set__ = Desc.__Set__
+            }
+
+            newDesc.__Configurable__ = configurable
+            newDesc.__Enumerable__ = enumerable
+
+            O.property[P] = newDesc
+        } else if (IsDataDescriptor(Desc) && IsAccessorDescriptor(current)) {
+            const configurable =
+                '__Configurable__' in Desc ? Desc.__Configurable__ : current.__Configurable__
+            const enumerable =
+                '__Enumerable__' in Desc ? Desc.__Enumerable__ : current.__Enumerable__
+            const newDesc = new DataPropertyDescriptor()
+
+            if ('__Value__' in Desc) {
+                newDesc.__Value__ = Desc.__Value__
+            }
+
+            if ('__Writable__' in Desc) {
+                newDesc.__Writable__ = Desc.__Writable__
+            }
+
+            newDesc.__Configurable__ = configurable
+            newDesc.__Enumerable__ = enumerable
+
+            O.property[P] = newDesc
+        } else {
+            Object.keys(Desc).forEach((key) => {
+                O[P][key] = Desc[key]
+            })
+        }
+    }
+
+    return true
+}
 
 function OrdinaryHasProperty(O: ECMAScriptObject, P: PropertyKey) {
     const hasOwn = O.__GetOwnProperty__(P)

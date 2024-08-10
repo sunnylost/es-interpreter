@@ -2,8 +2,8 @@
  * https://tc39.es/ecma262/#sec-well-known-intrinsic-objects
  * TODO
  */
-import { FunctionPrototype, ThrowTypeError } from '../objects/function'
-import { ObjectPrototype } from '../objects/object'
+import { FunctionPrototype, ObjectPrototype, ThrowTypeError } from '../objects'
+import { Console } from '../objects/console'
 
 export const IntrinsicObjects = {
     '%AggregateError%': 'AggregateError',
@@ -62,9 +62,5 @@ export const IntrinsicObjects = {
     '%WeakRef%': 'WeakRef',
     '%WeakSet%': 'WeakSet',
     '%ThrowTypeError%': ThrowTypeError,
-    console: {
-        log(...args: any[]) {
-            console.log.apply(console, args)
-        }
-    }
+    console: Console
 }

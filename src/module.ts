@@ -1,7 +1,7 @@
-import { RealmRecord } from './realm'
-import { ModuleEnvironmentRecord } from './env'
-import { ECMAScriptObject } from './objects/object'
-import { empty } from './types'
+import type { RealmRecord } from './realm'
+import type { ModuleEnvironmentRecord } from './env'
+import type { ECMAScriptObject } from './objects/object'
+import type { empty } from './types'
 
 export class ModuleRecord {
     __Realm__: RealmRecord = undefined

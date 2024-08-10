@@ -1,9 +1,9 @@
 // https://tc39.es/ecma262/#sec-code-realms
-import { ExecutionContext, GlobalEnvironmentRecord, NewGlobalEnvironment } from './env'
+import type { ExecutionContext, GlobalEnvironmentRecord, NewGlobalEnvironment } from './env'
 import { surroundingAgent } from './agent'
-import { ECMAScriptFunction, ECMAScriptObject, OrdinaryObjectCreate } from './objects/object'
+import type { ECMAScriptFunction, ECMAScriptObject, OrdinaryObjectCreate } from './objects'
 import { IntrinsicObjects } from './intrinsic'
-import { CompletionRecord, CompletionRecordType, DataPropertyDescriptor, unused } from './types'
+import { DataPropertyDescriptor, unused } from './types'
 import { DefinePropertyOrThrow } from './abstractOperations'
 
 export class RealmRecord {

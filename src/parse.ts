@@ -1,8 +1,8 @@
 import * as acorn from 'acorn'
 import * as walk from 'acorn-walk'
-import { ParseNode } from './types'
-import { Node } from 'acorn'
-import {
+import type { ParseNode } from './types'
+import type { Node } from 'acorn'
+import type {
     VariableDeclarationStr,
     VariableDeclaration,
     LexicallyDeclaration,

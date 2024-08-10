@@ -1,11 +1,11 @@
 // https://tc39.es/ecma262/#sec-ecmascript-data-types-and-values
-import { Program } from 'acorn'
-import { EnvironmentRecord } from './env'
-import { ECMAScriptLanguageValue } from './global'
+import type { Program } from 'acorn'
+import type { EnvironmentRecord } from './env'
+import type { ECMAScriptLanguageValue } from './global'
 import { $is } from './util'
 import { ToObject } from './abstractOperations'
-import { ECMAScriptFunction, OrdinaryObjectCreate } from './objects/object'
-import { VariableDeclaration } from './astNodeTypes'
+import type { OrdinaryObjectCreate, ECMAScriptFunction } from './objects'
+import type { VariableDeclaration } from './astNodeTypes'
 
 export enum CompletionRecordType {
     normal,
@@ -19,7 +19,7 @@ export class CompletionRecord<T = any> {
     $type = 'ReferenceRecord'
     __Type__: CompletionRecordType = null
     __Value__: T = null
-    __Target__: string = ''
+    __Target__ = ''
 
     constructor(type: CompletionRecordType, value: T, target: string) {
         this.__Type__ = type

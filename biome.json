@@ -29,10 +29,13 @@
                 "noExplicitAny": "off"
             },
             "style": {
-                "noParameterAssign": "off"
+                "noParameterAssign": "off",
+                "noUselessElse": "off",
+                "useEnumInitializers": "off"
             },
             "complexity": {
-                "noBannedTypes": "off"
+                "noBannedTypes": "off",
+                "noUselessThisAlias": "off"
             }
         }
     },

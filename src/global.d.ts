@@ -1,4 +1,4 @@
-import { Agent } from './agent'
+import type { Agent } from './agent'
 
 declare global {
     interface Window {

@@ -1,21 +1,16 @@
 // https://tc39.es/ecma262/#sec-environment-records
 import { surroundingAgent } from './agent'
-import { RealmRecord } from './realm'
-import {
+import type { RealmRecord } from './realm'
+import type {
     createNormalCompletion,
     DataPropertyDescriptor,
-    empty,
-    initialized,
     IsDataDescriptor,
-    lexical,
     ReferenceRecord,
-    ThisBindingStatusType,
-    uninitialized,
-    unresolvable,
-    unused
+    ThisBindingStatusType
 } from './types'
-import { ECMAScriptFunction, ECMAScriptObject } from './objects/object'
-import { ECMAScriptLanguageValue } from './global'
+import { lexical, empty, initialized, uninitialized, unresolvable, unused } from './types'
+import type { ECMAScriptFunction, ECMAScriptObject } from './objects'
+import type { ECMAScriptLanguageValue } from './global'
 import { Get, HasOwnProperty, HasProperty, IsExtensible, ToBoolean } from './abstractOperations'
 
 export class ExecutionContext {
@@ -31,17 +26,16 @@ export class ExecutionContext {
 export class EnvironmentRecord {
     $type = 'EnvironmentRecord'
     __OuterEnv__ = null
-    HasBinding(N: string) {
+    HasBinding(N: string): boolean {
         // TODO
         console.log('Not implement', N)
+        return false
     }
     // CreateMutableBinding(N: string, D: boolean) {}
     // CreateImmutableBinding(N: string, S: boolean) {}
     // InitializeBinding(N: string, V: ECMAScriptLanguageValue) {}
     // SetMutableBinding() {}
-    GetBindingValue() {
-        console.log('todo')
-    }
+    GetBindingValue(N: string, S: boolean) {}
     // DeleteBinding() {}
     // HasThisBinding() {}
     // HasSuperBinding() {}
@@ -51,7 +45,7 @@ export class EnvironmentRecord {
 // 9.1.1.1 https://tc39.es/ecma262/#sec-declarative-environment-records
 export class DeclarativeEnvironmentRecord extends EnvironmentRecord {
     $bindings = new Map()
-    HasBinding(N) {
+    HasBinding(N: string) {
         return this.$bindings.has(N)
     }
 
@@ -148,6 +142,7 @@ export class DeclarativeEnvironmentRecord extends EnvironmentRecord {
         return undefined
     }
 }
+
 export class FunctionEnvironmentRecord extends DeclarativeEnvironmentRecord {
     __ThisValue__: ECMAScriptLanguageValue = null
     __ThisBindingStatus__: ThisBindingStatusType = null
@@ -203,6 +198,7 @@ export class FunctionEnvironmentRecord extends DeclarativeEnvironmentRecord {
         return home.__GetPrototypeOf__()
     }
 }
+
 export class ModuleEnvironmentRecord extends DeclarativeEnvironmentRecord {}
 
 // "with"
@@ -256,6 +252,17 @@ export class ObjectEnvironmentRecord extends EnvironmentRecord {
             binding
         }
     }
+
+    GetBindingValue(N: string, S: boolean) {
+        const bindingObject = this.__BindingObject__
+        const value = HasProperty(bindingObject, N)
+
+        if (!value) {
+            return
+        }
+
+        return Get(bindingObject, N)
+    }
 }
 
 // 9.1.1.4 https://tc39.es/ecma262/#sec-global-environment-records
@@ -283,6 +290,7 @@ export class GlobalEnvironmentRecord extends EnvironmentRecord {
 
         if (DclRec.HasBinding(N)) {
             // throw TypeError
+            return
         }
 
         return DclRec.CreateMutableBinding(N, D)
@@ -293,6 +301,7 @@ export class GlobalEnvironmentRecord extends EnvironmentRecord {
 
         if (DclRec.HasBinding(N)) {
             // throw TypeError
+            return
         }
 
         return DclRec.CreateImmutableBinding(N, S)
@@ -304,6 +313,7 @@ export class GlobalEnvironmentRecord extends EnvironmentRecord {
         if (DclRec.HasBinding(N)) {
             return DclRec.InitializeBinding(N, V)
         }
+
         const ObjRec = this.__ObjectRecord__
         return ObjRec.InitializeBinding(N, V)
     }

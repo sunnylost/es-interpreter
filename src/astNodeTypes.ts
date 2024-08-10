@@ -1,4 +1,4 @@
-import { Node } from 'acorn'
+import type { Node } from 'acorn'
 
 export const ProgramStr = 'Program'
 export const BlockStatementStr = 'BlockStatement'

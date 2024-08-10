@@ -1,11 +1,11 @@
 /**
  * https://tc39.es/ecma262/#sec-ecmascript-language-scripts-and-modules
  */
-import { InitializeHostDefinedRealm, RealmRecord } from './realm'
-import { ModuleRecord } from './module'
-import { ExecutionContext, GlobalEnvironmentRecord } from './env'
+import { InitializeHostDefinedRealm, type RealmRecord } from './realm'
+import type { ModuleRecord } from './module'
+import type { ExecutionContext, GlobalEnvironmentRecord } from './env'
 import { surroundingAgent } from './agent'
-import { ParseNode, unused } from './types'
+import { type ParseNode, unused } from './types'
 import { ParseText } from './parse'
 import { VariableDeclarationStr } from './astNodeTypes'
 import { InstantiateFunctionObject } from './objects/function'
